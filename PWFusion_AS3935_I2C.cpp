@@ -46,7 +46,10 @@
 * Lightning Sensor manufactured by AMS. Originally designed for application
 * on the Arduino Uno platform.
 **************************************************************************/
-#include "PWFusion_AS3935_I2c.h"
+#include "PWFusion_AS3935_I2C.h"
+#if defined(ESP8266)
+#include <brzo_i2c.h>
+#endif
 
 PWF_AS3935_I2C::PWF_AS3935_I2C(uint8_t IRQx, uint8_t SIx, uint8_t DEVADDx)
 {
@@ -63,11 +66,35 @@ PWF_AS3935_I2C::PWF_AS3935_I2C(uint8_t IRQx, uint8_t SIx, uint8_t DEVADDx)
 
 }
 
+#if defined(ESP8266)
+PWF_AS3935_I2C::PWF_AS3935_I2C(uint8_t IRQx, uint8_t DEVADDx, uint8_t SDAx, uint8_t SCLx)
+{
+	_devadd = DEVADDx;
+	_irq = IRQx;
+
+    brzo_i2c_setup(SDAx, SCLx, 2000);
+
+	// initalize the chip select pins
+	pinMode(_irq, INPUT);
+
+}
+#endif
+
 uint8_t PWF_AS3935_I2C::_sing_reg_read(uint8_t RegAdd)
 {
+#if defined(ESP8266)
+    uint8_t buffer[1];
+    brzo_i2c_start_transaction((uint8_t)_devadd, 400);
+    buffer[0] = RegAdd;
+    brzo_i2c_write(buffer, 1, false);
+    brzo_i2c_read(buffer, 1, false);
+    uint8_t bcode = brzo_i2c_end_transaction();
+    uint8_t RegData = buffer[0];
+#else
 	//        I2C address      Register address   num bytes
 	I2c.read((uint8_t)_devadd, (uint8_t)RegAdd, (uint8_t)0x01);	// Use I2C library to read register
 	uint8_t RegData = I2c.receive();							// receive the I2C data
+#endif
 	return RegData;
 }
 
@@ -82,7 +109,16 @@ void PWF_AS3935_I2C::_sing_reg_write(uint8_t RegAdd, uint8_t DataMask, uint8_t R
 	uint8_t NewRegData = ((OrigRegData & ~DataMask) | (RegData & DataMask));
 
 	// finally, write the data to the register
+#if defined(ESP8266)
+    uint8_t buffer[2];
+    buffer[0] = RegAdd;
+    buffer[1] = NewRegData;
+    brzo_i2c_start_transaction((uint8_t)_devadd, 400);
+    brzo_i2c_write(buffer, 2, false);
+    brzo_i2c_end_transaction();
+#else
 	I2c.write(_devadd, RegAdd, NewRegData);
+#endif
 	Serial.print("wrt: ");
 	Serial.print(NewRegData,HEX);
 	Serial.print(" Act: ");
@@ -97,15 +133,29 @@ void PWF_AS3935_I2C::AS3935_DefInit()
 void PWF_AS3935_I2C::_AS3935_Reset()
 {
 	// run PRESET_DEFAULT Direct Command to set all registers in default state
+#if defined(ESP8266)
+    uint8_t buffer[] = { 0x96 };
+    brzo_i2c_start_transaction((uint8_t)_devadd, 400);
+    brzo_i2c_write(buffer, 1, false);
+    brzo_i2c_end_transaction();
+#else
 	I2c.write(_devadd, (uint8_t)0x3C, (uint8_t)0x96);
 	delay(2);					// wait 2ms to complete
+#endif
 }
 
 void PWF_AS3935_I2C::_CalRCO()
 {
+#if defined(ESP8266)
+    uint8_t buffer[] = { 0x96 };
+    brzo_i2c_start_transaction((uint8_t)_devadd, 400);
+    brzo_i2c_write(buffer, 1, false);
+    brzo_i2c_end_transaction();
+#else
 	// run ALIB_RCO Direct Command to cal internal RCO
 	I2c.write(_devadd, (uint8_t)0x3D, (uint8_t)0x96);
 	delay(2);					// wait 2ms to complete
+#endif
 }
 
 void PWF_AS3935_I2C::AS3935_PowerUp(void)

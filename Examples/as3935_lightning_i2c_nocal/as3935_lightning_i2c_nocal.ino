@@ -68,7 +68,12 @@
 **************************************************************************/
 // The AS3935 communicates via SPI or I2C. 
 // This example uses the I2C interface via the I2C lib, not Wire lib
-#include "I2C.h"
+#if defined(ESP8266)
+#define SCA 6
+#define SCL 7
+#else
+#include <I2C.h>
+#endif
 // include Playing With Fusion AXS3935 libraries
 #include "PWFusion_AS3935_I2C.h"
 
@@ -90,7 +95,11 @@ volatile int8_t AS3935_ISR_Trig = 0;
 // prototypes
 void AS3935_ISR();
 
+#if defined(ESP8266)
+PWF_AS3935_I2C  lightning0((uint8_t)IRQ_PIN, (uint8_t)AS3935_ADD, (uint8_t)SDA, (uint8_t)SCL);
+#else
 PWF_AS3935_I2C  lightning0((uint8_t)IRQ_PIN, (uint8_t)SI_PIN, (uint8_t)AS3935_ADD);
+#endif
 
 void setup()
 {
@@ -99,11 +108,13 @@ void setup()
   Serial.println("Playing With Fusion: AS3935 Lightning Sensor, SEN-39001-R01");
   Serial.println("beginning boot procedure....");
   
+#if !defined(ESP8266)
   // setup for the the I2C library: (enable pullups, set speed to 400kHz)
   I2c.begin();
   I2c.pullup(true);
   I2c.setSpeed(1); 
   delay(2);
+#endif
   
   lightning0.AS3935_DefInit();   // set registers to default  
   // now update sensor cal for your application and power up chip
