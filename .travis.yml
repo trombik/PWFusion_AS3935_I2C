@@ -11,5 +11,5 @@ env:
 install:
   - pip install -U platformio
 script:
-  - platformio ci --lib="." --lib I2C --board=nanoatmega328
-  - platformio ci --lib="." --lib lib/brzo_i2c --board=d1_mini
+  - platformio ci --lib="." --lib=lib/I2C --board=nanoatmega328
+  - platformio ci --lib="." --lib=lib/brzo_i2c --board=d1_mini
