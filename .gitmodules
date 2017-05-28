@@ -1,0 +1,6 @@
+[submodule "lib/brzo_i2c"]
+	path = lib/brzo_i2c
+	url = https://github.com/pasko-zh/brzo_i2c
+[submodule "lib/I2C"]
+	path = lib/I2C
+	url = https://github.com/rambo/I2C
